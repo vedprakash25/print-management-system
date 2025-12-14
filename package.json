@@ -2,7 +2,10 @@
 	"name": "tldraw-nextjs-app-example",
 	"version": "0.1.0",
 	"private": true,
-	"author": { "name": "tldraw GB Ltd.", "email": "hello@tldraw.com" },
+	"author": {
+		"name": "tldraw GB Ltd.",
+		"email": "hello@tldraw.com"
+	},
 	"homepage": "https://tldraw.dev",
 	"license": "MIT",
 	"scripts": {
@@ -12,12 +15,20 @@
 		"lint": "next lint"
 	},
 	"dependencies": {
+		"@tailwindcss/postcss": "^4.1.17",
 		"@types/node": "^22.15.31",
 		"@types/react": "^18.3.18",
 		"@types/react-dom": "^18.3.5",
+		"cropperjs": "^2.1.0",
+		"fabric": "^6.9.0",
+		"fs": "^0.0.1-security",
 		"next": "^15.4.8",
+		"path": "^0.12.7",
+		"postcss": "^8.5.6",
 		"react": "^18.3.1",
+		"react-cropper": "^2.3.3",
 		"react-dom": "^18.3.1",
+		"tailwindcss": "^4.1.17",
 		"tldraw": "^4.2.1",
 		"typescript": "^5.8.3"
 	}
