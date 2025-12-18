@@ -1,0 +1,72 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ===============================
+   LIGHT THEME
+================================ */
+:root {
+  --bg-app: 245 247 250;
+  --bg-panel: 255 255 255;
+  --bg-input: 245 247 250;
+  --border: 220 224 230;
+
+  --text-primary: 15 23 42;
+  --text-secondary: 100 116 139;
+
+  --primary: 37 99 235;
+  --danger: 220 38 38;
+  --success: 22 163 74;
+}
+
+/* ===============================
+   DARK THEME
+================================ */
+.dark {
+  --bg-app: 15 15 15;
+  --bg-panel: 28 28 28;
+  --bg-input: 35 35 35;
+  --border: 55 55 55;
+
+  --text-primary: 229 231 235;
+  --text-secondary: 156 163 175;
+
+  --primary: 59 130 246;
+  --danger: 239 68 68;
+  --success: 34 197 94;
+}
+
+@theme {
+  --color-app: rgb(var(--bg-app));
+  --color-panel: rgb(var(--bg-panel));
+  --color-input: rgb(var(--bg-input));
+  --color-border: rgb(var(--border));
+
+  --color-textPrimary: rgb(var(--text-primary));
+  --color-textSecondary: rgb(var(--text-secondary));
+
+  --color-primary: rgb(var(--primary));
+  --color-danger: rgb(var(--danger));
+  --color-success: rgb(var(--success));
+}
+
+
+/* 
+colors: {
+          app: "rgb(var(--bg-app))",
+          panel: "rgb(var(--bg-panel))",
+          input: "rgb(var(--bg-input))",
+
+          border: "rgb(var(--border))",
+
+          textPrimary: "rgb(var(--text-primary))",
+          textSecondary: "rgb(var(--text-secondary))",
+
+          primary: "rgb(var(--primary))",
+          danger: "rgb(var(--danger))",
+          success: "rgb(var(--success))",
+        } 
+*/
+
+button {
+  cursor: pointer;
+}
