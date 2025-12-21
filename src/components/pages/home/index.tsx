@@ -1,15 +1,16 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { downloadDir } from "@tauri-apps/api/path";
 import { openPath } from "@tauri-apps/plugin-opener";
 import { remove } from "@tauri-apps/plugin-fs";
 
-import type { FileItem } from "../hooks/useTauriFiles";
-import { useFiles } from "../context/fileContext";
+import type { FileItem } from "@hooks/useTauriFiles";
+import { useFiles } from "@context/fileContext";
 
 type Tab = "images" | "docs";
+
 const MAX_MULTI_SELECT = 5;
-const IMAGE_PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 export default function Home() {
   const navigate = useNavigate();
@@ -17,38 +18,64 @@ export default function Home() {
 
   const [tab, setTab] = useState<Tab>("images");
   const [search, setSearch] = useState("");
-  const [sortBy, setSortBy] = useState<"name" | "mtime">("mtime");
+  const [sortBy, setSortBy] = useState<SortBy>("newest");
   const [downloadsRoot, setDownloadsRoot] = useState<string | null>(null);
+
   const [selectedImages, setSelectedImages] = useState<FileItem[]>([]);
   const [toast, setToast] = useState<string | null>(null);
 
+  // batching
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
+  /* ---------- INIT ---------- */
   useEffect(() => {
+    SortByName();
     downloadDir().then((dir) => setDownloadsRoot(dir.replace(/\\/g, "/")));
   }, []);
 
+  /* ---------- RESET PAGINATION ON TAB / SEARCH ---------- */
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+    setSelectedImages([]);
+  }, [tab, search, sortBy]);
+
   const query = search.trim().toLowerCase();
 
-  const images = useMemo(() => {
+  /* ---------- FILTER + SORT (FULL LIST, NO RENDER YET) ---------- */
+  const filteredImages = useMemo(() => {
     return files
       .filter(
         (f) =>
           f.type === "image" && (!query || f.name.toLowerCase().includes(query))
       )
       .sort((a, b) =>
-        sortBy === "name"
+        sortBy === "newest"
           ? a.name.localeCompare(b.name)
           : (b.mtime || 0) - (a.mtime || 0)
-      )
-      .slice(0, IMAGE_PAGE_SIZE);
+      );
   }, [files, query, sortBy]);
 
-  const documents = useMemo(() => {
+  const filteredDocs = useMemo(() => {
     return files.filter(
       (f) =>
         f.type === "pdf" && (!query || f.name.toLowerCase().includes(query))
     );
   }, [files, query]);
 
+  /* ---------- ONLY RENDER WHAT IS VISIBLE ---------- */
+  const images = filteredImages.slice(0, visibleCount);
+  const documents = filteredDocs.slice(0, visibleCount);
+
+  const SortByName = () => {
+    return setSortBy("newest");
+  };
+
+  const hasMore =
+    tab === "images"
+      ? visibleCount < filteredImages.length
+      : visibleCount < filteredDocs.length;
+
+  /* ---------- ACTIONS ---------- */
   const toggleImageSelect = (file: FileItem) => {
     setSelectedImages((prev) => {
       const exists = prev.some((f) => f.path === file.path);
@@ -89,36 +116,46 @@ export default function Home() {
     if (!downloadsRoot) return;
     await openPath(`${downloadsRoot}/${file.path}`.replace(/\/+/g, "/"));
   };
+  type SortBy = "name-asc" | "name-desc" | "newest";
 
+  /* ---------- UI ---------- */
   return (
     <main className="min-h-screen bg-app text-textPrimary p-6">
       <div className="max-w-7xl mx-auto bg-panel rounded-xl p-6 shadow">
         {/* Header */}
-        <div className="flex justify-between mb-4">
+        <div className="flex justify-between mb-4 gap-6">
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search"
             className="bg-input border border-border px-3 py-1.5 rounded text-sm"
           />
-          <button
-            onClick={refresh}
-            className="border border-border px-3 py-1.5 rounded text-sm"
-          >
-            Refresh
-          </button>
+          <div>
+            <button
+              onClick={refresh}
+              className="border border-border px-3 py-1.5 rounded text-sm mr-3"
+            >
+              Refresh
+            </button>
+            <select
+              className="border border-border py-1.5 rounded text-sm "
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortBy)}
+            >
+              <option value="name-asc">Name (A–Z)</option>
+              <option value="name-desc">Name (Z–A)</option>
+              <option value="newest">Newest</option>
+            </select>
+          </div>
         </div>
 
         {/* Tabs */}
-        <div className="flex justify-between gap-6 border-b border-border mb-4">
-          <div className=" flex gap-4">
+        <div className="flex justify-between border-b border-border mb-3">
+          <div className="flex gap-4">
             {(["images", "docs"] as Tab[]).map((t) => (
               <button
                 key={t}
-                onClick={() => {
-                  setTab(t);
-                  setSelectedImages([]);
-                }}
+                onClick={() => setTab(t)}
                 className={`pb-2 ${
                   tab === t ? "text-primary border-b-2 border-primary" : ""
                 }`}
@@ -130,14 +167,12 @@ export default function Home() {
 
           {/* MULTI EDIT CTA */}
           {selectedImages.length > 1 && (
-            <div className="mb-3 flex justify-end">
-              <button
-                onClick={() => handleEdit()}
-                className="bg-yellow-500 text-black text-sm px-5 py-1 rounded-sm font-medium"
-              >
-                Edit ({selectedImages.length})
-              </button>
-            </div>
+            <button
+              onClick={() => handleEdit()}
+              className="bg-blue-700 text-white text-sm px-4 pb-1 rounded mb-1"
+            >
+              Edit ({selectedImages.length})
+            </button>
           )}
         </div>
 
@@ -146,7 +181,7 @@ export default function Home() {
 
         {/* IMAGES */}
         {tab === "images" && (
-          <div className="grid  lg:grid-cols-3 gap-2">
+          <div className="grid lg:grid-cols-3 gap-2">
             {images.map((file) => {
               const selected = selectedImages.some((f) => f.path === file.path);
 
@@ -174,7 +209,7 @@ export default function Home() {
                         e.stopPropagation();
                         handleEdit(file);
                       }}
-                      className="px-3 py-1 text-white text-xs bg-blue-600 rounded disabled:opacity-40"
+                      className="px-3 py-1 text-xs bg-blue-600 text-white rounded disabled:opacity-40"
                     >
                       Edit
                     </button>
@@ -183,7 +218,7 @@ export default function Home() {
                         e.stopPropagation();
                         handleDelete(file);
                       }}
-                      className="px-3 py-1 text-white text-xs bg-red-600 rounded"
+                      className="px-3 py-1 text-xs bg-red-600 text-white rounded"
                     >
                       Delete
                     </button>
@@ -205,19 +240,31 @@ export default function Home() {
               <div className="flex gap-2">
                 <button
                   onClick={() => handlePrintPdf(file)}
-                  className="bg-green-600 px-3 py-1 text-xs rounded"
+                  className="bg-green-600 px-3 py-1 text-white text-xs rounded"
                 >
                   Print
                 </button>
                 <button
                   onClick={() => handleDelete(file)}
-                  className="bg-red-600 px-3 py-1 text-xs rounded"
+                  className="bg-red-600 px-3 py-1 text-white text-xs rounded"
                 >
                   Delete
                 </button>
               </div>
             </div>
           ))}
+
+        {/* LOAD MORE */}
+        {hasMore && (
+          <div className="flex justify-center mt-4">
+            <button
+              onClick={() => setVisibleCount((v) => v + PAGE_SIZE)}
+              className="px-5 py-2 text-sm border border-border rounded hover:bg-input"
+            >
+              Load more
+            </button>
+          </div>
+        )}
 
         {toast && (
           <div className="fixed bottom-6 right-6 bg-panel px-4 py-2 rounded border border-border">

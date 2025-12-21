@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Canvas as FabricCanvas, FabricImage } from "fabric";
 import Cropper, { ReactCropperElement } from "react-cropper";
 import "cropperjs/dist/cropper.css";
@@ -24,28 +24,27 @@ import {
   ZoomOut,
 } from "lucide-react";
 
-/* ---------- CONSTANTS ---------- */
 const PREVIEW_WIDTH = 900;
 const A4_WIDTH = 2480;
 const A4_HEIGHT = 3508;
 
 export default function Editor() {
   const navigate = useNavigate();
-  const { path } = useParams<{ path: string }>();
-  const decodedPath = decodeURIComponent(path ?? "");
+  // const { path } = useParams<{ path: string }>();
+  // const decodedPath = decodeURIComponent(path ?? "");
 
   const canvasEl = useRef<HTMLCanvasElement>(null);
   const fabricRef = useRef<FabricCanvas | null>(null);
   const cropperRef = useRef<ReactCropperElement>(null);
 
-  const [loading, setLoading] = useState(true);
+  // const [loading, setLoading] = useState(true);
   const [pageZoom, setPageZoom] = useState(1);
   const [exporting, setExporting] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [croppingImage, setCroppingImage] = useState<FabricImage | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
+  // const [isDragging, setIsDragging] = useState(false);
 
   const previewHeight = Math.round((A4_HEIGHT / A4_WIDTH) * PREVIEW_WIDTH);
 
@@ -89,7 +88,7 @@ export default function Editor() {
 
     (async () => {
       try {
-        setLoading(true);
+        // setLoading(true);
         canvas.clear();
 
         for (let i = 0; i < files.length; i++) {
@@ -127,7 +126,7 @@ export default function Editor() {
 
         canvas.renderAll();
       } finally {
-        alive && setLoading(false);
+        // alive && setLoading(false);
       }
     })();
 

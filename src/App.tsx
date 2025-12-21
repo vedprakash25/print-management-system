@@ -1,7 +1,7 @@
 import { Route, Routes } from "react-router-dom";
 import "./App.css";
 
-import Home from "./components/home";
+import Home from "@pages/home";
 import { lazy, Suspense } from "react";
 
 const Editor = lazy(() => import("./components/editor"));
