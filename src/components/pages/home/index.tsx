@@ -1,11 +1,15 @@
+import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { downloadDir } from "@tauri-apps/api/path";
-import { openPath } from "@tauri-apps/plugin-opener";
+// import { openPath } from "@tauri-apps/plugin-opener";
+import { ask } from "@tauri-apps/plugin-dialog";
+
 import { remove } from "@tauri-apps/plugin-fs";
 
 import type { FileItem } from "@hooks/useTauriFiles";
 import { useFiles } from "@context/fileContext";
+import PdfPreviewModal from "@components/molecules/pdfPreviewModal";
 
 type Tab = "images" | "docs";
 
@@ -15,6 +19,8 @@ const PAGE_SIZE = 10;
 export default function Home() {
   const navigate = useNavigate();
   const { files, loading, error, refresh } = useFiles();
+  const [previewPath, setPreviewPath] = useState<string | null>(null);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 
   const [tab, setTab] = useState<Tab>("images");
   const [search, setSearch] = useState("");
@@ -31,6 +37,9 @@ export default function Home() {
   useEffect(() => {
     SortByName();
     downloadDir().then((dir) => setDownloadsRoot(dir.replace(/\\/g, "/")));
+
+    const printers = invoke<string[]>("list_printers");
+    console.log(printers);
   }, []);
 
   /* ---------- RESET PAGINATION ON TAB / SEARCH ---------- */
@@ -102,7 +111,13 @@ export default function Home() {
 
   const handleDelete = async (file: FileItem) => {
     if (!downloadsRoot) return;
-    if (!confirm(`Delete "${file.name}"?`)) return;
+
+    const confirmed = await ask(`Delete "${file.name}"?`, {
+      title: "Confirm Delete",
+      kind: "warning",
+    });
+
+    if (!confirmed) return;
 
     try {
       await remove(`${downloadsRoot}/${file.path}`.replace(/\/+/g, "/"));
@@ -112,10 +127,20 @@ export default function Home() {
     }
   };
 
-  const handlePrintPdf = async (file: FileItem) => {
+  const handlePreviewAndPrintPdf = async (file: FileItem) => {
     if (!downloadsRoot) return;
-    await openPath(`${downloadsRoot}/${file.path}`.replace(/\/+/g, "/"));
+
+    const fullPath = `${downloadsRoot}/${file.path}`.replace(/\/+/g, "/");
+
+    const bytes = await invoke<number[]>("load_pdf", { path: fullPath });
+    const uint8 = new Uint8Array(bytes);
+
+    const blob = new Blob([uint8], { type: "application/pdf" });
+    const url = URL.createObjectURL(blob);
+
+    setPdfUrl(url);
   };
+
   type SortBy = "name-asc" | "name-desc" | "newest";
 
   /* ---------- UI ---------- */
@@ -239,11 +264,12 @@ export default function Home() {
               <span className="truncate">{file.name}</span>
               <div className="flex gap-2">
                 <button
-                  onClick={() => handlePrintPdf(file)}
+                  onClick={() => handlePreviewAndPrintPdf(file)}
                   className="bg-green-600 px-3 py-1 text-white text-xs rounded"
                 >
                   Print
                 </button>
+
                 <button
                   onClick={() => handleDelete(file)}
                   className="bg-red-600 px-3 py-1 text-white text-xs rounded"
@@ -272,6 +298,12 @@ export default function Home() {
           </div>
         )}
       </div>
+      {pdfUrl && (
+        <PdfPreviewModal
+          pdfUrl={pdfUrl}
+          onClose={() => setPdfUrl(null)}
+        />
+      )}
     </main>
   );
 }

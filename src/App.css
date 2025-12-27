@@ -49,6 +49,37 @@
   --color-success: rgb(var(--success));
 }
 
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  #pdf-preview-root {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+  }
+
+  canvas {
+    display: block;
+    margin: 0 auto;
+    max-width: 100% !important;
+    height: auto !important;
+    page-break-after: always;
+  }
+
+  canvas:last-child {
+    page-break-after: auto;
+  }
+}
+
+
 
 /* 
 colors: {

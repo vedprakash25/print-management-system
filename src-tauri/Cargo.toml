@@ -25,3 +25,8 @@ tauri-plugin-fs = "2"
 tauri-plugin-shell = "2"
 tauri-plugin-opener = "2"
 tauri-plugin-dialog = "2.4.2"
+winapi = { version = "0.3", features = ["winspool", "winnt", "shellapi"] }
+windows = { version = "0.54", features = [
+  "Win32_Foundation",
+  "Win32_Graphics_Printing"
+] }
